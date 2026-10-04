@@ -1,0 +1,10 @@
+# En producción todas las credenciales vienen de variables de entorno.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
