@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router'
+import { AuthLayout } from '../components/AuthLayout'
 import { LoginForm } from '../components/LoginForm'
 import { useAuth } from '../hooks/useAuth'
 
@@ -14,23 +16,35 @@ export function LoginPage() {
   const location = useLocation()
   const state = (location.state as LoginLocationState | null) ?? {}
   const from = state.from ?? '/'
+  const [filled, setFilled] = useState(() => (state.registeredEmail ? 1 : 0))
 
   if (isAuthenticated) return <Navigate to={from} replace />
 
   return (
-    <main className="auth-page">
-      <section className="auth-card">
-        <h1>Iniciar sesión</h1>
-        {state.message && (
-          <p role="status" className="auth-form__success">
-            {state.message}
-          </p>
-        )}
-        <LoginForm defaultEmail={state.registeredEmail} onSuccess={() => navigate(from, { replace: true })} />
+    <AuthLayout
+      title="Iniciar sesión"
+      headline="Hoy también se entrena."
+      tagline="Inicia sesión para seguir con tu plan."
+      filled={filled}
+      total={2}
+      readyText="Barra cargada. Ya puedes ingresar."
+    >
+      {state.message ? (
+        <p role="status" className="auth-form__success">
+          {state.message}
+        </p>
+      ) : null}
+      <LoginForm
+        defaultEmail={state.registeredEmail}
+        onFilledChange={setFilled}
+        onSuccess={() => navigate(from, { replace: true })}
+      />
+      <div className="auth__switch">
+        <span>¿Aún no tienes cuenta?</span>
         <Link to="/register" className="button button--secondary">
           Crear cuenta
         </Link>
-      </section>
-    </main>
+      </div>
+    </AuthLayout>
   )
 }

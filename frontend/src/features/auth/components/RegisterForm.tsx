@@ -3,26 +3,31 @@ import { ApiError } from '@/api/httpClient'
 import { FormField } from '@/components/ui/FormField'
 import { authApi } from '../api/authApi'
 import type { RegisterRequest } from '../types'
+import { countFilled } from '../utils/countFilled'
 
 interface RegisterFormProps {
+  onFilledChange: (filled: number) => void
   onSuccess: (email: string) => void
 }
 
 const EMPTY_FORM: RegisterRequest = { email: '', firstName: '', lastName: '', password: '' }
+const TOTAL_FIELDS = Object.keys(EMPTY_FORM).length
 
-export function RegisterForm({ onSuccess }: RegisterFormProps) {
+export function RegisterForm({ onFilledChange, onSuccess }: RegisterFormProps) {
   const [values, setValues] = useState<RegisterRequest>(EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // "Guardar" solo se habilita cuando todos los campos obligatorios tienen contenido
-  const isComplete = Object.values(values).every((value) => value.trim() !== '')
+  const isComplete = countFilled({ ...values }) === TOTAL_FIELDS
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target
-    setValues((current) => ({ ...current, [name]: value }))
+    const next = { ...values, [name]: value }
+    setValues(next)
     setFieldErrors(({ [name]: _removed, ...rest }) => rest)
+    onFilledChange(countFilled({ ...next }))
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -44,7 +49,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         setError(err.message)
         setFieldErrors(err.problem.errors ?? {})
       } else {
-        setError('No se pudo conectar con el servidor')
+        setError('No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.')
       }
     } finally {
       setIsSubmitting(false)
@@ -63,26 +68,28 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         onChange={handleChange}
         error={fieldErrors.email}
       />
-      <FormField
-        label="Nombres"
-        name="firstName"
-        autoComplete="given-name"
-        required
-        maxLength={60}
-        value={values.firstName}
-        onChange={handleChange}
-        error={fieldErrors.firstName}
-      />
-      <FormField
-        label="Apellidos"
-        name="lastName"
-        autoComplete="family-name"
-        required
-        maxLength={60}
-        value={values.lastName}
-        onChange={handleChange}
-        error={fieldErrors.lastName}
-      />
+      <div className="auth-form__row">
+        <FormField
+          label="Nombres"
+          name="firstName"
+          autoComplete="given-name"
+          required
+          maxLength={60}
+          value={values.firstName}
+          onChange={handleChange}
+          error={fieldErrors.firstName}
+        />
+        <FormField
+          label="Apellidos"
+          name="lastName"
+          autoComplete="family-name"
+          required
+          maxLength={60}
+          value={values.lastName}
+          onChange={handleChange}
+          error={fieldErrors.lastName}
+        />
+      </div>
       <FormField
         label="Contraseña"
         name="password"
@@ -95,12 +102,12 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         onChange={handleChange}
         error={fieldErrors.password}
       />
-      {error && (
+      {error ? (
         <p role="alert" className="auth-form__error">
           {error}
         </p>
-      )}
-      <button type="submit" disabled={!isComplete || isSubmitting}>
+      ) : null}
+      <button type="submit" className="button button--primary" disabled={!isComplete || isSubmitting}>
         {isSubmitting ? 'Guardando…' : 'Guardar'}
       </button>
     </form>
